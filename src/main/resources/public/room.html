@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Hello WebSocket</title>
+    <script src="https://cdn.bootcss.com/jquery/3.3.1/jquery.min.js"></script>
+    <script src="https://cdn.bootcss.com/stomp.js/2.3.3/stomp.min.js"></script>
+    <script src="https://cdn.bootcss.com/sockjs-client/1.1.4/sockjs.min.js"></script>
+
+    <script type="text/javascript">
+        var stompClient = null;
+
+        function setConnected(connected) {
+            $("#connect").prop("disabled", connected);
+            $("#disconnect").prop("disabled", !connected);
+            if (connected) {
+                $("#conversation").show();
+            }
+            else {
+                $("#conversation").hide();
+            }
+            $("#greetings").html("");
+        }
+
+        function connect() {
+            // var socket = new SockJS('https://www.chenjinxinlove.com/word-fight/webSocketEndPoint');
+            //var socket = new SockJS('/webSocketEndPoint');
+            var socket = new WebSocket('wss://www.chenjinxinlove.com/word-fight/ws/');
+            // var socket = new WebSocket('ws://localhost:8080/webSocketEndPoint/');
+            stompClient = Stomp.over(socket);
+            var headers = {
+                roomId: $("#roomId").val(),
+                uid: $("#inviter").val()
+            };
+            stompClient.connect(headers, function (frame) {
+                setConnected(true);
+                console.log('Connected: ' + frame);
+                stompClient.subscribe('/user/' + $("#roomId").val() + '/v1/game/send', function (data) {
+                    console.log("###data:" + JSON.parse(data.body));
+                    //showGreeting(JSON.parse(data.body).from, JSON.parse(data.body).answer);
+                    showMsg(JSON.parse(data.body));
+                });
+            });
+
+        }
+
+        function disconnect() {
+            if (stompClient !== null) {
+                stompClient.disconnect();
+            }
+            setConnected(false);
+            console.log("Disconnected");
+        }
+
+        function sendName() {
+            stompClient.send("/app/v1/game/receive/" + $("#roomId").val(), {}, JSON.stringify({'commond':'answer','from':$("#inviter").val(),'storeId':1,'answer': $("#answer").val()}));
+        }
+
+        function getQuiz() {
+            stompClient.send("/app/v1/game/receive/" + $("#roomId").val(), {}, JSON.stringify({'commond':'quiz','from':$("#inviter").val()}));
+        }
+
+        function finishQuiz() {
+            stompClient.send("/app/v1/game/receive/" + $("#roomId").val(), {}, JSON.stringify({'commond':'finish','from':$("#inviter").val(),'score':$("#score").val()}));
+        }
+
+        function runaway() {
+            stompClient.send("/app/v1/game/receive/" + $("#roomId").val(), {}, JSON.stringify({'commond':'runaway','from':$("#inviter").val()}));
+        }
+
+        function useprop() {
+            stompClient.send("/app/v1/game/receive/" + $("#roomId").val(), {}, JSON.stringify({'commond':'useprop','from':$("#inviter").val()}));
+        }
+
+        function showGreeting(userId, answer) {
+            $("#greetings").append("<tr><td> Hi, 这是来自 " + userId + " 的消息: " + answer + "</td></tr>");
+        }
+
+        function showMsg(msg) {
+            var info = "消息type:"+msg.commond+",from:"+msg.from;
+            if (msg.commond == "answer") {
+                info +=',answer:'+msg.answer;
+            }
+            if (msg.commond == 'useprop') {
+                info += ',使用了道具';
+            }
+            if (msg.commond == 'runaway') {
+                info += ',逃跑了';
+            }
+            var content = '<tr><td>'+info+'</td></tr>';
+            $("#greetings").append(content);
+
+        }
+
+        $(function () {
+            $("form").on('submit', function (e) {
+                e.preventDefault();
+            });
+            $("#connect").click(function () {
+                connect();
+            });
+            $("#disconnect").click(function () {
+                disconnect();
+            });
+            $("#send").click(function () {
+                sendName();
+            });
+
+            $("#getQuiz").click(function () {
+                getQuiz();
+            });
+
+            $("#finishQuiz").click(function () {
+                finishQuiz();
+            });
+
+            $("#runaway").click(function () {
+                runaway();
+            });
+
+            $("#useprop").click(function () {
+                useprop();
+            });
+        });
+    </script>
+    <!--
+    <script src="http://cdn.bootcss.com/sockjs-client/1.1.1/sockjs.min.js"></script>
+    <script src="http://cdn.bootcss.com/stomp.js/2.3.3/stomp.js"></script>
+    <script src="http://cdn.bootcss.com/jquery/3.1.1/jquery.min.js"></script>
+    -->
+</head>
+<body>
+<noscript><h2 style="color: #ff0000">Seems your browser doesn't support Javascript! Websocket relies on Javascript being
+    enabled. Please enable
+    Javascript and reload this page!</h2></noscript>
+<div id="main-content" class="container">
+
+    <div class="row">
+        <div class="col-md-12">
+            <form class="form-inline">
+                <div class="form-group">
+                    <label for="roomId">房间号：</label>
+                    <input type="text" id="roomId" class="form-control" placeholder="roomId">
+                </div>
+                <div class="form-group">
+                    <label for="inviter">玩家：</label>
+                    <input type="text" id="inviter" class="form-control" placeholder="inviter">
+                </div>
+                <button id="connect" class="btn btn-default" type="submit">连接</button>
+                <button id="disconnect" class="btn btn-default" type="submit" disabled="disabled">断开</button>
+            </form>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <form class="form-inline">
+                <button id="getQuiz" class="btn btn-default" type="button">获取试题</button>
+                <div class="form-group">
+                    <label for="answer">答案：</label>
+                    <input type="text" id="answer" class="form-control" placeholder="answer">
+                </div>
+                <button id="send" class="btn btn-default" type="button">提交</button>
+                <button id="runaway" class="btn btn-default" type="button">逃跑</button>
+                <button id="useprop" class="btn btn-default" type="button">使用道具</button>
+            </form>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-md-12">
+            <table id="conversation" class="table table-striped">
+                <thead>
+                <tr>
+                    <th>来自服务器的推送消息：</th>
+                </tr>
+                </thead>
+                <tbody id="greetings">
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+</body>
+</html>

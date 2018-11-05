@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.koolearn.wordfight.mapper.StoreMapper">
+
+    <!-- 通用查询映射结果 -->
+    <resultMap id="BaseResultMap" type="com.koolearn.wordfight.entity.Store">
+        <result column="id" property="storeId" />
+        <result column="word_id" property="wordId" />
+        <result column="question_type" property="questionType" />
+        <result column="question_title" property="questionTitle" />
+        <result column="option_a" property="optionA" />
+        <result column="option_b" property="optionB" />
+        <result column="option_c" property="optionC" />
+        <result column="option_d" property="optionD" />
+        <result column="true_option" property="trueOption" />
+        <result column="word" property="word" />
+        <result column="audio_address" property="audioAddress" />
+    </resultMap>
+
+    <!-- 通用查询结果列 -->
+    <sql id="Base_Column_List">
+        id,
+        word_id, question_type, question_title, option_a, option_b, option_c, option_d, true_option, word, audio_address
+    </sql>
+    <select id="getRandomStores" resultMap="BaseResultMap">
+        SELECT <include refid="Base_Column_List"/> FROM tb_store  ORDER BY  RAND() LIMIT 10
+    </select>
+
+
+</mapper>
